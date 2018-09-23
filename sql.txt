@@ -1,0 +1,289 @@
+create database Baza04092018
+
+use Baza04092018
+
+CREATE table Autori
+(
+AutorID nvarchar(11) not null constraint PK_Autori primary key,
+Prezime nvarchar(25) not null,
+Ime nvarchar(25) not null,
+Telefon nvarchar(20) default null,
+DatumKreiranjaZapisa date not null default getdate(),
+DatumModifikovanjaZapisa date default null
+
+)
+create table Izdavaci
+(
+IzdavacID nvarchar(4) not null constraint PK_Izdavaci primary key,
+Naziv nvarchar(100) not null constraint uq_naziv unique,
+Biljeske nvarchar(1000) default 'Lorem ipsum',
+DatumKreiranjaZapisa date not null default getdate(),
+DatumModifikovanjaZapisa date default null
+)
+
+create table Naslovi
+(
+NaslovID nvarchar(6) not null constraint PK_Naslovi primary key,
+IzdavacID NVARCHAR(4) not null CONSTRAINT FK_IzdavacID foreign key references Izdavaci(IzdavacID),
+Naslov nvarchar(100)  not null,
+Cijena money,
+DatumIzdavanja date not null default getdate(),
+DatumKreiranjaZapisa date not null default getdate(),
+DatumModifikovanjaZapisa date default null,
+)
+
+create table NasloviAutori
+(
+AutorID nvarchar(11)  NOT NULL constraint FK_Autor foreign key references Autori(AutorID),
+NaslovID nvarchar(6) NOT NULL constraint FK_Naslov foreign key references Naslovi(NaslovID),
+constraint PK_NasloviAutori primary key(AutorID, NaslovID),
+DatumKreiranjaZapisa date not null default getdate(),
+DatumModifikovanjaZapisa date default null
+)
+
+---2b
+
+/*Iz baze podataka pubs tabela "authors", a putem podupita u tabelu Autori 
+importovati sve sluèajno sortiranje zapise. Voditi raèuna da mapirate 
+odgovarajuæe kolone*/
+
+insert into Autori(AutorID, Prezime, Ime, Telefon)
+select au_id, au_lname, au_fname, phone
+from pubs.dbo.authors
+order by newid()
+
+select* from Autori
+
+/*Iz baze podataka pubs i tabela "publishers" i "pub_info", a putem podupita
+u tabelu Izdavaci importovati sve slucajno odabrane sortirane zapise.
+Kolonu pr_infO mapirati kao bilješke i iste skratit na 100 karaktera. 
+Voditi raèuna da mapirate odgovarajuæe kolove i tipove podataka*/
+
+insert into Izdavaci(IzdavacID, Naziv, Biljeske)
+select P.pub_id, P.pub_name, SUBSTRING(PI.pr_info, 0 ,100) AS Biljeske
+from pubs.dbo.publishers as P inner join pubs.dbo.pub_info as PI
+on P.pub_id= PI.pub_id
+order by newid()
+
+select* from Izdavaci
+
+/*Iz baze podataka pubs tabela "titles", a putem podupita u tabelu "Naslovi" 
+importovati sve zapise. Vodite raèuna da mapirate odgovarajuæe kolone.*/
+
+insert into Naslovi(NaslovID, IzdavacID, Naslov, Cijena,DatumIzdavanja)
+select T.title_id, T.pub_id, T.title, T.price, T.pubdate
+from pubs.dbo.titles as T
+
+SELECT* FROM Naslovi
+
+
+/*Iz baze podataka pubs tabela "titleauthors", a putem podupita u tabelu
+"NasloviAutori" zapise. Vodite raèuna da mapirate odgovarajuæe kolone."*/
+
+insert into NasloviAutori(AutorID, NaslovID)
+select TA.au_id, TA.title_id
+from pubs.dbo.titleauthor as TA 
+
+SELECT* FROM NasloviAutori
+
+
+
+
+
+---2c
+
+CREATE TABLE Gradovi
+(
+GradID int not null identity(5,5) constraint PK_gradovi primary key,
+Naziv nvarchar(100) not null constraint uq_Grad unique,
+DatumKreiranjaZapisa date not null default getdate(),
+DatumModifikovanjaZapisa date default null
+)
+
+/*Iz baze podataka pubs tabela "authors", a putem podupita u tabelu 
+"Gradovi" importovati sve gradove bez duplikata!*/
+
+insert into Gradovi(Naziv)
+select distinct a.city
+from pubs.dbo.authors as a
+
+/*Modifikovati tabelu Autori i dodati spoljni kljuè prema tabeli Gradovi*/
+
+alter table Autori
+add GradID int constraint FK_Grad 
+FOREIGN KEY REFERENCES Gradovi(GradID)
+
+select* from Gradovi
+select* from Autori
+
+Update Autori
+SET GradID = (SELECT GradID from Gradovi WHERE Gradovi.Naziv
+ = (select city from pubs.dbo.authors WHERE Autori.Ime = au_fname))
+
+
+SELECT * FROM Autori
+
+
+/*Kreirati dvije uskladištene procedure koje æe modifikovati podatke
+u tabelu Autori*/
+
+/*Prvih 10 autora iz tabele postaviti da su iz grada: San Francisco*/
+
+create procedure proc_Modifikacija1
+as
+begin
+update top (10) Autori
+set GradID =(select GradID
+from Gradovi where Naziv ='San Francisco')
+end
+
+exec proc_Modifikacija1
+
+select*from Autori
+select* from Gradovi
+
+/*Ostalim autorima podesiti grad na Berkeley*/
+
+create procedure proc_Modifikacija3
+as
+begin
+update Autori 
+set GradID = (select GradID from Gradovi
+where Naziv= 'Berkeley') 
+where GradID is null
+end
+
+exec proc_Modifikacija3
+
+
+
+--3 (view)
+
+create view view_Pogled
+AS
+select A.Ime + ' ' + A.Prezime AS ImePrezime, G.Naziv as NazivGrada, N.Naslov, N.Cijena, I.Naziv as NazivIzdavaca, I.Biljeske
+from Autori as A inner join Gradovi as G
+on A.GradID= G.GradID inner join NasloviAutori as NA
+ON A.AutorID= NA.AutorID inner join Naslovi as N
+on NA.NaslovID= N.NaslovID inner join Izdavaci as I
+on N.IzdavacID= I.IzdavacID
+where N.Cijena IS NOT NULL AND N.Cijena >10 and I.Naziv like '%&%'
+ and G.Naziv= 'San Francisco' 
+
+
+/*Modifikovati tabelu Autori i dodati joj jednu kolonu
+
+EMAIL polje za unos 100 unicode karaktera, default je null.*/
+
+alter table Autori
+add Email nvarchar(100) default null
+
+
+select* from Autori
+
+
+/*Kreirati dvije uskladištene procedure koje æe modifikovati
+podatke u tabelu Autori i svim autorima generisati novu email adresu
+
+Prva procedura u formatu Ime.Prezime@fit.ba svim autorima iz grada San Francisko
+Druga procedura u formatu Prezime.Ime@fit.ba svim autorima iz grada Berkeley
+*/
+
+create procedure proc_EMAIL
+as
+begin
+update Autori
+set Email = Ime+ '.' + Prezime + '@fit.ba'
+where GradID= (select GradID
+from Gradovi
+where Naziv = 'San Francisco')
+end 
+
+SELECT * FROM Autori
+
+
+create procedure proc_Email2
+as
+begin
+update Autori
+set Email = Prezime+ '.' + Ime + '@fit.ba'
+from Autori as A inner join Gradovi as G
+on A.GradID= G.GradID
+where G.Naziv= 'Berkeley'
+end
+
+---6
+
+
+select PP.FirstName+ '.' + PP.LastName AS Username,  isnull(PP.Title, 'N/A') as Titula ,
+ PP.LastName, PP.FirstName, EM.EmailAddress, 
+PH.PhoneNumber, SCC.CardNumber, 
+replace(lower(left(convert(nvarchar(MAX), newid()),16)),'-','7') as Password
+into #temp
+from AdventureWorks2017.Person.Person as PP inner join AdventureWorks2017.Person.EmailAddress as EM
+on PP.BusinessEntityID= EM.BusinessEntityID inner join AdventureWorks2017.Person.PersonPhone as PH
+on PP.BusinessEntityID= PH.BusinessEntityID left join AdventureWorks2017.Sales.PersonCreditCard as SPC
+on PP.BusinessEntityID= SPC.BusinessEntityID left join AdventureWorks2017.Sales.CreditCard as SCC
+on SPC.CreditCardID= SCC.CreditCardID 
+order by PP.FirstName, PP.LastName
+
+select*from #temp
+
+
+---7
+
+CREATE INDEX IX_Prvi on #temp
+(Username)
+
+CREATE INDEX IX_Drugi on #temp
+(LastName, FirstName)
+
+select Username, LastName, FirstName
+from #temp
+where Username like 'Humberto.Acevedo'
+
+
+--8
+
+create procedure proc_Brisanje1
+as 
+begin
+delete 
+from #temp 
+where CardNumber is null
+end
+
+exec proc_Brisanje1
+
+---9
+
+backup database Baza04092018
+to disk='Baza04092018.bak'
+
+drop table #temp
+
+
+----10
+
+create procedure proc_Brisanjesvih1
+as
+begin
+delete from Naslovi
+delete from Izdavaci
+delete from NasloviAutori
+delete from Autori
+end
+
+exec proc_Brisanjesvih1
+
+
+
+
+
+
+
+
+
+
+
+
