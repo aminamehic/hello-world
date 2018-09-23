@@ -1,0 +1,266 @@
+#include<iostream>
+#include<fstream>
+
+#pragma warning (disable:4996)
+using namespace std;
+
+char * crt = "\n----------------------------------------------------\n";
+struct Datum {
+	int * _dan, *_mjesec, *_godina;
+	void Unos(int d, int m, int g) {
+		_dan = new int(d);
+		_mjesec = new int(m);
+		_godina = new int(g);
+	}
+	void Ispis() {
+		cout << *_dan << "/" << *_mjesec << "/" << *_godina << endl;
+	}
+	void Dealociraj() {
+		delete _dan; delete _mjesec; delete _godina;
+		_dan = _mjesec = _godina = nullptr;
+	}
+};
+struct Artikal {
+	char * _naziv;
+	float _cijena;
+	int brojacKolicina = 0;
+	void Unos(char * naziv, float cijena) {
+		int vel = strlen(naziv) + 1;
+		_naziv = new char[vel];
+		strcpy_s(_naziv, vel, naziv);
+		_cijena = cijena;
+	}
+	void Dealociraj() { delete[]_naziv; _naziv = nullptr; }
+	void Ispis() {
+		cout << _naziv << " " << _cijena << " KM";
+	}
+};
+struct Racun {
+	//format broja racuna: 006005491
+	//osigurati automatsko generisanje broja racuna pocevsi od 000000001
+	char _brojRacuna[10];
+	Datum _datumKreiranja;
+	Artikal * _artikli;
+	int kolicina;
+	int * _kolicine;//cuva informaciju o kolicini svakog artikla na racunu
+	int _brojArtikala;
+	//Potpisi funkcija trebaju odgovarati onima u main-u
+	//1. Unos
+	void Unos(char *brojRacuna, Datum danas) {
+		int size = strlen(brojRacuna) + 1;
+		strcpy_s(_brojRacuna, size, brojRacuna);
+		_datumKreiranja.Unos(*danas._dan, *danas._mjesec, *danas._godina);
+		_artikli = nullptr;
+		_brojArtikala = 0;
+		_kolicine = nullptr;
+	}
+	//2. Dealociraj
+	void Dealociraj()
+	{
+		for (int i = 0; i < _brojArtikala; i++)
+		{
+			_artikli[i].Dealociraj();
+		}
+		delete _kolicine;
+		_kolicine = nullptr;
+		_artikli = nullptr;
+	}
+	//3. DodajArtikal - dodaje novi artikal u listu artikala zajedno sa njegovom kolicinom.
+	void DodajArtikal(Artikal proizvod, int kolicina)
+	{
+		if (_brojArtikala == 0)
+		{
+			_artikli = new Artikal[_brojArtikala + 1];
+			_kolicine = new int[_brojArtikala + 1];
+			_kolicine[_brojArtikala] = 0;
+			_kolicine[_brojArtikala] += kolicina;
+			_artikli[_brojArtikala].Unos(proizvod._naziv, proizvod._cijena);
+
+
+		}
+		bool isti = false;
+		if (_brojArtikala > 0)
+		{
+			for (int i = 0; i < _brojArtikala; i++)
+			{
+				if (strcmp(_artikli[i]._naziv, proizvod._naziv) == 0)
+				{
+					isti = true;
+					_kolicine[i] += kolicina;
+				}
+			}
+			if (isti == false) {
+				int *noveKolicine = new int[_brojArtikala + 1];
+				Artikal * novi = new Artikal[_brojArtikala + 1];
+
+				for (int i = 0; i < _brojArtikala; i++)
+				{
+					novi[i] = _artikli[i];
+					noveKolicine[i] = _kolicine[i];
+				}
+
+
+				novi[_brojArtikala].Unos(proizvod._naziv, proizvod._cijena);
+
+				noveKolicine[_brojArtikala] = kolicina;
+
+				//bitno jer kad je broj artikala =0(gore u prvom if-u) pravis jedno viska polje, pa da kod brisanja ne bi puklo(msm da je tocno)
+				if (_brojArtikala != _brojArtikala - 1) {
+					delete[]_kolicine;
+					delete[] _artikli;
+				}
+
+				_kolicine = noveKolicine;
+				_artikli = novi;
+				_brojArtikala++;
+
+			}
+		}
+		if (_brojArtikala == 0)
+			_brojArtikala++;
+	}
+	//Onemoguciti ponavljanje artikala na nacin da se uvecava samo kolicina ukoliko
+	//korisnik vise puta pokusa dodati isti artikal.
+	//4. Ispis - ispisuje racun u formatu prikazanom na slici (nije obavezno da bude 
+	//identican, ali je svakako pozeljno).Prilikom svakog ispisa, racun
+	//je potrebno spasiti u tekstualni fajl sa istim nazivom kao i broj racuna.
+	void Ispis()
+	{
+		float ukupna = 0;
+		cout << "Broj racuna: " << _brojRacuna << endl;
+		cout << "Datum Kreiranja: ";
+		_datumKreiranja.Ispis();
+		if (_brojArtikala > 0) {
+			for (int i = 0; i < _brojArtikala; i++)
+			{
+				cout << "Artikl-> ";  _artikli[i].Ispis();
+				cout << "   Kolicina: " << _kolicine[i] << endl;
+				ukupna += _artikli[i]._cijena*_kolicine[i];
+			}
+		}
+		if (_brojArtikala == 0) {
+			cout << "Artikl-> ";  _artikli[0].Ispis();
+			cout << "   Kolicina: " << _kolicine[0] << endl;
+			ukupna = _artikli[0]._cijena*_kolicine[0];
+
+		}
+		cout << "Ukupna cijena->" << ukupna << endl;
+
+		ofstream ulaz(_brojRacuna, ios::out);
+		ulaz << "Broj racuna: " << _brojRacuna << endl;
+
+		ulaz << "Datum Kreiranja: " << _datumKreiranja._dan << "." << _datumKreiranja._mjesec << "." << _datumKreiranja._godina << "." << endl;
+		for (int i = 0; i < _brojArtikala; i++)
+		{
+			ulaz << "Artikl-> " << _artikli[i]._naziv;
+			ulaz << "   Cijena -> " << _artikli[i]._cijena;
+			ulaz << "   Kolicina: " << _kolicine[i] << endl;
+		}
+		ulaz << "Ukupna cijena->" << ukupna << endl;
+		ulaz.close();
+	}
+
+	//5. BinarnaPretraga - koristeci binarnu pretragu, na osnovu naziva, pronalazi i vraca 
+	//pokazivac na artikal.Ukoliko trazeni artikal ne postoji funkcija vraca nullptr.
+	Artikal *BinarnaPretraga(char * trazeni)
+	{
+		Artikal *pok = nullptr;
+		for (int i = 0; i < _brojArtikala - 1; i++)
+		{
+			for (int j = 0; j < _brojArtikala; j++)
+			{
+				if (strcmp(_artikli[i]._naziv, _artikli[j]._naziv) > 0) {
+					swap(_artikli[i], _artikli[j]);
+					swap(_kolicine[i], _kolicine[j]);
+				}
+			}
+		}
+
+		int lijevi, zadnji, sredina;
+		lijevi = 0, zadnji = _brojArtikala - 1;
+		while (lijevi <= zadnji) {
+			sredina = (lijevi + zadnji) / 2;
+			if (strcmp(_artikli[sredina]._naziv, trazeni) == 0)
+			{
+				pok = &_artikli[sredina];
+				return pok;
+			}
+			if (strcmp(_artikli[sredina]._naziv, trazeni) < 0)
+			{
+				zadnji = sredina;
+			}
+			if (strcmp(_artikli[sredina]._naziv, trazeni) > 0)
+			{
+				lijevi = sredina;
+			}
+		}
+		return nullptr;
+	}
+
+};
+//1. PronadjiNajskupljiArtikal - rekurzivna funkcija koja vraca pokazivac na artikal sa najvecom ukupnom cijenom (cijena*kolicina)
+Artikal *PronadjiNajskupljiArtikal(int brojArtikala, Racun racun, float cijena, int indeks)
+{
+	if (brojArtikala < 0)
+		return &racun._artikli[indeks];
+
+	if (racun._artikli[brojArtikala - 1]._cijena > cijena) {
+		indeks = brojArtikala;
+		cijena = racun._artikli[brojArtikala]._cijena;
+	}
+	PronadjiNajskupljiArtikal(brojArtikala - 1, racun, cijena, indeks);
+
+
+}
+//2. GenerisiSljedeciBrojRacuna - generise i vraca naredni broj racuna
+int broj = 1;
+char *GenerisiSljedeciBrojRacuna() {
+	char *pocetni = new char[10];
+	char *temp = new char[10];
+	itoa(broj, temp, 10);
+	for (int i = 0; i < 10 - (strlen(temp) + 1) - 1; i++)
+	{
+		strcpy_s(pocetni + i, 10, "0");
+	}
+	strcat_s(pocetni, 10, temp);
+	strcat_s(pocetni, 10, "\0");
+	broj++;
+	return pocetni;
+}
+void main() {
+	//za eventualne nejasnoce analizirati testni program i ispise na slici
+	Datum danas; danas.Unos(13, 6, 2016);
+	Racun racun1;
+	Artikal cigarete, cokolada, sok;
+	cigarete.Unos("Cigarete", 2.23);
+	cokolada.Unos("Cokolada", 1.23);
+	sok.Unos("Cappy", 2.10);
+	Racun racun;
+	char *pok = GenerisiSljedeciBrojRacuna();
+	racun.Unos(pok, danas);
+	racun.DodajArtikal(cokolada, 5);
+	racun.DodajArtikal(sok, 10);
+	racun.DodajArtikal(cigarete, 2);
+	racun.DodajArtikal(cigarete, 5);
+	racun.Ispis();
+
+	cout << endl;
+	char *pok1 = GenerisiSljedeciBrojRacuna();
+	racun1.Unos(pok1, danas);
+	racun1.DodajArtikal(cokolada, 5);
+	racun1.DodajArtikal(sok, 10);
+	racun1.DodajArtikal(cigarete, 2);
+	racun1.DodajArtikal(cigarete, 5);
+	racun1.Ispis();
+	Artikal * p1 = racun.BinarnaPretraga("Cokolada");
+	cout << "Binarnom pretragom pronadjen artikal -> ";
+	p1->Ispis();
+	cout << endl;
+	cout << endl;
+	Artikal * p2 = PronadjiNajskupljiArtikal(racun._brojArtikala, racun, 0, 0);
+	cout << "Rekurzivno pronadjen najskuplji artikal -> ";
+	p2->Ispis();
+	cout << endl;
+	//dealocirati zauzetu memoriju
+	racun.Dealociraj();
+};

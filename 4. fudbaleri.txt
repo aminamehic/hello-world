@@ -1,0 +1,87 @@
+#include<iostream>
+using namespace std;
+const int red = 11, kolona = 12;
+
+float ispis_golova(int mat[][kolona],int izbor){
+	int i = izbor, suma = 0;
+	float ar;
+	for (int j = 0; j < kolona; j++){
+		if (mat[i][j] == 0)
+			continue;
+		cout << "Na utakmici " << j + 1 << " postigao je " << mat[i][j] << " golova" << endl;
+		suma += mat[i][j];
+	}
+	ar = (float)suma / 12;
+	return ar;
+}
+
+int najbolji_igrac(int mat[][kolona]){
+	int suma = 0, max_suma = 0, index;
+	float ar = 0;
+	for (int i = 0; i < red; i++){
+		suma = 0;
+		for (int j = 0; j < kolona; j++){
+			suma += mat[i][j];
+			}
+		if (suma>max_suma){
+			max_suma = suma;
+			index = i;
+		}
+	}
+	ar = (float)max_suma / 12;
+	cout << "Prosjek najboljeg fudbalera je " << ar;
+
+	return index;
+}
+
+int naj_utakmica(int mat[][kolona]){
+	int suma = 0, max_suma = 0, utakmica, index;
+	for (int j = 0; j < kolona; j++){
+		suma = 0;
+		for (int i = 0; i < red; i++){
+			suma += mat[i][j];
+		}
+		if (suma>max_suma){
+			max_suma = suma;
+			utakmica = j;
+		}
+	}
+
+	int max = mat[0][utakmica];
+	for (int i = 0; i < red; i++){
+		if (mat[i][utakmica]>max){
+			max = mat[i][utakmica];
+			index = i;
+		}
+
+	}
+
+	float procenat = (float)max_suma / 11 * 100;
+	cout << "utakmica " << utakmica << endl << "Broj golova: " << max_suma << endl << "Najuspjesniji igrac: " << index;
+
+	return utakmica;
+	
+}
+
+int main(){
+	int mat[11][12], najbolji, naj, izbor;
+	float ispis;
+	//unos
+	cout << "za kojeg igraca zelite ispis golova?" << endl;
+	do{
+		cin >> izbor;
+	} 
+	while (izbor<1 && izbor>11);
+	ispis_golova(mat, izbor);
+	ispis = ispis_golova(mat, izbor);
+	cout << "Prosjecan broj postignutih golova za cijelu sezonu za odabranog igraca je: " << ispis << endl;
+	najbolji_igrac(mat);
+	najbolji = najbolji_igrac(mat);
+	cout << "Najbolji igrac je " << najbolji+1 << endl;
+	naj_utakmica(mat);
+	naj = naj_utakmica(mat);
+	cout << "Najuspjesnija utakmica je: " << naj + 1 << ".";
+
+
+	return 0;
+}

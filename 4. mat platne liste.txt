@@ -1,0 +1,98 @@
+#include<iostream>
+using namespace std;
+const int red = 10, kolona = 12;
+
+void unos(int mat[][kolona]){
+	for (int i = 0; i < red; i++){
+		cout << "unesi radne sate za radnika " << i + 1 << endl;
+		for (int j = 0; j < kolona; j++){
+			cin >> mat[i][j];
+			cout << "unesi radne sate za mjesec " << j + 1 << endl;
+		}
+	}
+}
+
+float ispis_plate(int mat[][kolona], int a){
+	int suma = 0, brojac = 0;
+	while (int i=a){
+		for (int j = 0; j < kolona; j++){
+			cout << "za mjesec redni broj " << j + 1 << " plata je" << mat[i][j] * 12 << endl;
+				suma += mat[i][j];
+				brojac++;
+		}
+	}
+	float ar;
+	ar = (float)suma / brojac;
+	return ar;
+}
+
+int najbolji_uposlenik(int mat[][kolona]){
+	int max = 0;
+	int suma = 0, suma1 = 0;
+	int index;
+	for (int i = 0; i < red; i++){
+		suma = 0;
+		for (int j = 0; j < kolona; j++){
+			suma += mat[i][j];
+				}
+		if (suma>160){
+			max = suma;
+			index = i;
+			break;
+		}
+	}
+}
+int aa=index;
+
+for (int i = aa; i < red; i++){
+	suma1 = 0;
+	for (int j = 0; j < kolona; j++)
+		suma1 += mat[i][j]
+
+			if (suma1>max){
+				max = suma1;
+				index = i;
+			}
+	}
+return index;
+ }
+
+void ispis(int mat[i][j]){
+	int suma = 0;
+	float ar = 0;
+	int preko = 0;
+	for (int j = 0; j < kolona; j++){
+		suma = 0;
+		preko = 0;
+		ar = 0;
+		for (int i = 0; i < red; i++){
+			suma += mat[i][j];
+			if (mat[i][j]>160)
+				preko += (mat[i][j] - 160) * 12;
+		}
+		ar = (float)suma / 10;
+		cout << "za " << j + 1 << ". mjesec prosjecna isplacena plata je " << ar << "KM" << endl;
+		cout << "prekovremenih sati isplaceno je " << preko << " KM" << endl;
+		
+	}
+}
+
+int main(){
+	int mat[10][12];
+	unos(mat);
+	int a;
+	cout << "za kojeg radnika zelite ispis plate?" << endl;
+	do{
+		cin >> a;
+	} 
+	while (a<1 && a>10);
+	ispis_plate(mat, a);
+	float aritmeticka = ispis_plate(mat, a);
+	cout << "aritmeticka za odabranog uposlenika je " << aritmeticka << endl;
+	int najbolji;
+	najbolji = najbolji_uposlenik(mat);
+	cout << "uposleik sa najvise prekovremenih sati je " << najbolji + 1 << endl;
+	ispis(mat);
+
+	return 0;
+}

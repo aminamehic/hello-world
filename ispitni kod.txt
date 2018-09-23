@@ -1,0 +1,89 @@
+#include<iostream>
+using namespace std;
+void unos(int niz[],int n){
+
+	int a;
+	int broj, prva,  brojac_niza = 0,  brojac = 10;
+	cout << "unesi clanove niza" << endl;
+
+	do{
+		cin >> broj;
+		/*if (broj == 0){
+			cout << "Forsiran prekid!";
+			return 0;
+		}
+		*/
+		a = broj;
+		if (broj > 0 && broj % 2 != 0){
+			while (broj != 0){
+				prva = broj % 10;
+				broj /= 10;
+			}
+			if (prva % 2 == 0){
+				niz[brojac_niza] = a;
+				brojac_niza++;
+				brojac--;
+			}
+		}
+
+	} while (brojac != 0);
+
+}
+
+bool prost(int broj){
+	int prost_je = false;
+	if (broj < 2)
+		return false;
+	for (int i = 2; i < broj; i++){
+		if (broj%i == 0)
+			return false;
+	}
+		return true;
+}
+
+bool parne_cifre(int broj){//treba li ovo staviti u gornju funkciju?
+	int brojac = 0, modulo;
+	while (broj != 0){
+		modulo = broj % 10;
+		if (modulo % 2 == 0)
+			brojac++;
+		broj /= 10;
+	}
+	if (brojac > 1)
+		return true;
+	
+	return false;
+}
+
+void sortiranje(int niz[], int n){
+	bool promjena = false;
+	int temp = 0;
+	for (int i = 0; i < n - 1; i++){
+		if (niz[i] < niz[i + 1]){
+			temp = niz[i];
+			niz[i] = niz[i + 1];
+			niz[i + 1] = temp;
+			promjena = true;
+		}
+	}
+}
+
+void ispis(int niz[], int n){
+	for (int i = 0; i < n; i++){
+		cout << niz[i] << "  ";
+	}
+}
+
+int main(){
+	int niz[10], n = 10;
+	unos(niz, n);
+	for (int i = 0; i < n; i++){
+		if (prost(i) == false && parne_cifre(i)==false)
+			niz[i] = 0;
+	}
+
+	sortiranje(niz, n);
+	ispis(niz, n);
+
+	return 0;
+}
