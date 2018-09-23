@@ -1,0 +1,41 @@
+#include<iostream>
+using namespace std;
+int main(){
+	int niz[10];
+	int n, modulo, brojac = 0, modulo1;
+	cout << "unesi n" << endl;
+	cin >> n;
+	int n1 = n;
+	while (n1 != 0){
+		modulo = n1 % 10;
+		if (modulo % 2 != 0)
+			brojac++;
+		n1 /= 10;
+	}
+
+while (n != 0){
+		for (int i = 0; i < brojac; i++){
+			modulo1= n % 10;
+			if (modulo1 % 2 != 0)
+				niz[i] = modulo1;
+		}
+			n /= 10;
+	}
+bool promjena = true;
+int temp = 0;
+while (promjena){
+	promjena = false;
+	for (int i = 0; i < brojac - 1; i++){
+		if (niz[i] >niz[i + 1]){
+			temp = niz[i];
+			niz[i] = niz[i + 1];
+			niz[i + 1] = temp;
+			promjena = true;
+		}
+	}
+}
+for (int i = 0; i < brojac; i++)
+	cout << niz[i];
+
+	return 0;
+}
